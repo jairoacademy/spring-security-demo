@@ -3,11 +3,76 @@ schema: spec-driven
 # Project context (optional)
 # This is shown to AI when creating artifacts.
 # Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Contexto de mais alta prioridade para qualquer proposal, design, spec ou task deste projeto.
+  Derivado da análise de: pom.xml, SecurityConfig.java, MyController.java, openspec/config.yaml,
+  e das changes já arquivadas (add-public-message-endpoint, allow-frontend-cors).
+
+  ## Contexto do projeto
+  Ambiente de aprendizado de Spring Security evoluindo em passos mínimos e explícitos.
+  Cada mudança deve validar um conceito por vez (baseline público/autenticado → CORS →
+  users/DB → PasswordEncoder → JWT → CSRF/stateless), sem pular etapas didáticas mesmo
+  quando pular economizaria trabalho no curto prazo.
+
+  ## Stack e convenções técnicas (não-negociável)
+  - Java 21, Spring Boot 4.1.1 (via spring-boot-starter-parent).
+  - Dependências fixas: spring-boot-starter-security + spring-boot-starter-webmvc
+    (produção); spring-boot-starter-security-test + spring-boot-starter-webmvc-test
+    (teste, MockMvc).
+  - Build via Maven Wrapper (mvnw / mvnw.cmd) — nunca assumir Maven global instalado.
+  - Porta padrão da aplicação: 9090 (server.port em application.properties).
+  - Pacote raiz: academy.jairo.springsecuritydemo, com subpacotes por responsabilidade
+    (config, controller, e futuramente service, security/jwt, repository conforme o
+    projeto evolui).
+
+  ## Princípios de arquitetura
+  1. SRP entre config e controller: decisão de segurança vive exclusivamente em
+     config/SecurityConfig; exposição HTTP vive em controller/*. Controllers nunca
+     declaram regras de autorização, CORS ou autenticação (nada de @CrossOrigin solto).
+  2. OCP na configuração de segurança: novos endpoints entram adicionando
+     requestMatchers ao SecurityFilterChain existente — sem reestruturar a config nem
+     criar múltiplos filter chains sem necessidade comprovada.
+  3. Default-deny explícito: toda rota é autenticada por padrão
+     (anyRequest().authenticated()). Exceções (permitAll()) são explícitas, mínimas, e
+     cada uma precisa estar documentada e testada na spec da capability correspondente.
+  4. Menor privilégio em CORS: origens, métodos e headers liberados são sempre os
+     mínimos necessários para o caso de uso atual — nunca allowedOriginPatterns("*"),
+     nunca allowCredentials(true) sem necessidade comprovada e registrada em spec.
+  5. Sem abstrações prematuras: não introduzir DTOs, camadas de serviço,
+     ResponseEntity/records genéricos, ou generalizações "para o futuro" antes de
+     existir um caso de uso real que exija.
+
+  ## Não-metas permanentes (só mudam se uma change própria revisar isto explicitamente)
+  - Não desabilitar CSRF nem migrar para sessão stateless sem uma spec dedicada que
+    justifique a mudança de modelo de sessão.
+  - Não introduzir JWT, OAuth2 ou provedores externos de identidade fora da sequência
+    didática planejada (baseline → users/DB → PasswordEncoder → JWT).
+  - Não liberar CORS além de /api/** nem para métodos/origens não solicitados.
+
+  ## Segurança — linhas que nunca podem ser cruzadas
+  - Nenhuma rota nova é pública por padrão; toda exceção a anyRequest().authenticated()
+    precisa estar listada e justificada na spec da capability.
+  - Segredos, senhas e chaves nunca em texto plano no código-fonte ou em
+    application.properties versionado.
+  - Requisitos de segurança são especificados como resultado observável (ex.:
+    "requisição anônima a rota protegida retorna 401 ou redireciona"), nunca apenas
+    como mecanismo interno — isso mantém a spec estável mesmo quando a implementação
+    evolui.
+
+  ## Testes e validação
+  - Toda capability nova precisa de, no mínimo: 1 cenário de acesso permitido e 1
+    cenário de acesso negado, verificáveis via curl e/ou MockMvc.
+  - ./mvnw test (no mínimo contextLoads) precisa passar em build verde antes de
+    qualquer arquivamento de change.
+  - Testes manuais com curl, documentados no tasks.md de cada change, continuam
+    válidos como evidência complementar aos testes automatizados.
+
+  ## Fluxo de trabalho (OpenSpec)
+  - proposal.md → specs/<capability>/spec.md (delta) → design.md → tasks.md,
+    arquivados em openspec/changes/archive/.
+  - Specs principais vivem em openspec/specs/<capability>/spec.md; toda mudança que
+    altera comportamento observável precisa de uma delta spec antes da implementação.
+  - Idioma dos artefatos de planejamento (proposal, design, specs, tasks): português.
 
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.
