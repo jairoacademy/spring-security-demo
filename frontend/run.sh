@@ -1,0 +1,1 @@
+docker run -d -p 5500:80 --name cors-html-server cors-test-html
